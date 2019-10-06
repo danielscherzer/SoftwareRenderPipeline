@@ -1,10 +1,8 @@
-﻿using System.Diagnostics;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace RenderPipeline
 {
-	[DebuggerDisplay("{Position}")]
-	internal class Vertex
+	public class Vertex
 	{
 		public Vertex(Vector4 position)
 		{
@@ -14,6 +12,8 @@ namespace RenderPipeline
 		public Vector4 Position { get; set; }
 
 		public Vector4 PerspectiveDivide() => Vector4.Divide(Position, Position.W);
+
+		public override string ToString() => $"{Position}";
 
 	}
 }
