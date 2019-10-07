@@ -3,9 +3,9 @@ using System.Numerics;
 
 namespace RenderPipeline
 {
-	public static class FrameBufferToImage
+	public static class BufferToImage
 	{
-		public static void ToImage(this FrameBuffer<Vector4> frameBuffer, string fileName)
+		public static void ToImage(this Buffer2D<Vector4> frameBuffer, string fileName)
 		{
 			var bytes = new byte[frameBuffer.Width * frameBuffer.Height * 4];
 			var id = 0;

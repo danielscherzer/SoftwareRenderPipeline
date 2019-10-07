@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace RenderPipeline
@@ -7,40 +9,51 @@ namespace RenderPipeline
 	{
 		public Renderer(int width, int height)
 		{
-			FrameBuffer = new FrameBuffer<Vector4>(width, height);
-			zBuffer = new FrameBuffer<float>(width, height);
-			viewPort = new ViewPort(0, 0, FrameBuffer.Width, FrameBuffer.Height, 0, 1);
+			FrameBuffer = new Buffer2D<Vector4>(width, height);
+			FrameBuffer.Clear(new Vector4(0, 0, 0, 1));
+			Zbuffer = new Buffer2D<float>(width, height);
+			ViewPort = new ViewPort(0, 0, FrameBuffer.Width, FrameBuffer.Height, 0, -1);
+			Zbuffer.Clear(ViewPort.MaxDepth);
 		}
-		public FrameBuffer<Vector4> FrameBuffer { get; }
-		private FrameBuffer<float> zBuffer { get; }
 
-		public void DrawTriangle(Triangle triangle)
+		public Buffer2D<Vector4> FrameBuffer { get; }
+		public ViewPort ViewPort { get; }
+		public Buffer2D<float> Zbuffer { get; }
+
+		public int CreateBuffer<TYPE>(TYPE[] data) where TYPE : struct
 		{
-			for(int i = 0; i < 3; ++i)
+			bufferObjects.Add(data);
+			return bufferObjects.Count - 1;
+		}
+
+		internal void DrawTrianglesIndexed(int indexBuffer, int[] attributeBuffers)
+		{
+			var vertexShaderOutput = new Vertex[3];
+			int i = 0;
+			foreach (int index in bufferObjects[indexBuffer])
 			{
-				triangle[i] = ApplyVertexShader(triangle[i]);
-			}
-			foreach (var tessTri in ApplyTessellationShader(triangle))
-			{
-				foreach (var geomTri in ApplyGeometryShader(tessTri))
+				var vertexShaderInputs = new Vertex(attributeBuffers.Select(id => bufferObjects[id].GetValue(index)));
+				vertexShaderOutput[i] = ApplyVertexShader(vertexShaderInputs); // on the GPU this can be done in parallel
+				++i;
+				if (3 == i)
 				{
-					foreach (var fragment in RasterizeTriangle(geomTri))
+					i = 0;
+					//TODO: VertexAssembler emits a primitive
+					foreach (var fragment in RasterizeTriangle(new Triangle(vertexShaderOutput)))
+					{
 						//TODO: blending
-						FrameBuffer[fragment.X, fragment.Y] = new Vector4(1, 0.5f, 0.5f, 1);
+						FrameBuffer[fragment.X, fragment.Y] = ApplyFragmentShader(fragment);
+					}
 				}
 			}
 		}
 
-		private readonly ViewPort viewPort;
+		private readonly List<Array> bufferObjects = new List<Array>();
 
-		private static Vertex ApplyVertexShader(Vertex vertex)
+		private Vector4 ApplyFragmentShader(Fragment fragment)
 		{
-			return vertex;
-		}
-
-		private static IEnumerable<Triangle> ApplyTessellationShader(Triangle triangle)
-		{
-			yield return triangle;
+			var color = (Vector4)fragment.Attributes[0];
+			return color;
 		}
 
 		private static IEnumerable<Triangle> ApplyGeometryShader(Triangle triangle)
@@ -48,12 +61,26 @@ namespace RenderPipeline
 			yield return triangle;
 		}
 
+		private static IEnumerable<Triangle> ApplyTessellationShader(Triangle triangle)
+		{
+			yield return triangle;
+		}
+
+		private static Vertex ApplyVertexShader(Vertex vertex)
+		{
+			
+			var position = new Vector4((Vector3)vertex.Attributes[0], 1f);
+			var color = (Vector4)vertex.Attributes[1];
+			return new Vertex(new object[] { position, color });
+		}
+
 		private IEnumerable<Fragment> RasterizeTriangle(Triangle triangle)
 		{
 			// perspective division
 			for (int i = 0; i < 3; ++i)
 			{
-				triangle[i].Position = triangle[i].PerspectiveDivide();
+				var position = triangle[i].Position;
+				triangle[i].Position = Vector4.Divide(position, position.W);
 			}
 
 			// Back face culling would come here.
@@ -62,7 +89,7 @@ namespace RenderPipeline
 			var p = new Vector2[3];
 			for (int i = 0; i < 3; ++i)
 			{
-				triangle[i].Position = viewPort.Transform(triangle[i].Position);
+				triangle[i].Position = ViewPort.Transform(triangle[i].Position);
 				p[i] = triangle[i].Position.XY();
 			}
 
@@ -71,12 +98,14 @@ namespace RenderPipeline
 			var max = Vector2.Max(p[0], Vector2.Max(p[1], p[2]));
 
 			// Clipping of box to view-port bounds
-			var viewPortMin = new Vector2(viewPort.TopLeftX, viewPort.TopLeftY);
-			var viewPortMax = viewPortMin + new Vector2(viewPort.Width, viewPort.Height) - Vector2.One;
+			var viewPortMin = new Vector2(ViewPort.TopLeftX, ViewPort.TopLeftY);
+			var viewPortMax = viewPortMin + new Vector2(ViewPort.Width, ViewPort.Height) - Vector2.One;
 			min = Vector2.Max(min, viewPortMin);
 			max = Vector2.Min(max, viewPortMax);
 
 			// rasterize - triangle setup
+			float Det(Vector2 a, Vector2 b) => a.X * b.Y - b.X * a.Y;
+
 			var ca = p[0] - p[2];
 			var cb = p[1] - p[2];
 			var fact = 1.0f / Det(ca, cb);
@@ -94,30 +123,17 @@ namespace RenderPipeline
 					{
 						/* inside triangle */
 						//early z-test
-						float z = triangle.InterpolateZ(u, v);
-						//if (zBuffer[x, y] < z)
+						float z = Barycentric.Interpolate(u, v, triangle[0].Position.Z, triangle[1].Position.Z, triangle[2].Position.Z);
+						if (Zbuffer[x, y] < z)
 						{
 							//create fragment
-							yield return new Fragment(x, y);
+							var fragment = new Fragment(x, y);
+							fragment.Attributes = triangle.Interpolate(u, v);
+							yield return fragment;
 						}
 					}
 				}
 			}
-		}
-
-		private static int Det(Vector<int> a, Vector<int> b)
-		{
-			return a[0] * b[1] - b[0] * a[1];
-		}
-
-		private static float Det(Vector2 a, Vector2 b)
-		{
-			return a.X * b.Y - b.X * a.Y;
-		}
-
-		private static Vector3 PerspectiveDivide(Vector4 position)
-		{
-			return Vector3.Divide(position.XYZ(), position.W);
 		}
 	}
 }

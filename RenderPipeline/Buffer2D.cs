@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace RenderPipeline
 {
-	public class FrameBuffer<TPixel> : IEnumerable<TPixel> where TPixel : struct
+	public class Buffer2D<TPixel> : IEnumerable<TPixel> where TPixel : struct
 	{
-		public FrameBuffer(int width, int height)
+		public Buffer2D(int width, int height)
 		{
 			Width = width;
 			Height = height;

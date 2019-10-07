@@ -1,4 +1,6 @@
-﻿using System.Numerics;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 
 namespace RenderPipeline
 {
@@ -6,14 +8,22 @@ namespace RenderPipeline
 	{
 		public Vertex(Vector4 position)
 		{
-			Position = position;
+			Attributes = new List<object>
+			{
+				position
+			};
 		}
 
-		public Vector4 Position { get; set; }
+		public Vertex(IEnumerable<object> attributes)
+		{
+			Attributes = attributes.ToList();
+		}
+		//public ref TYPE GetAttribute<TYPE>(int index)
 
-		public Vector4 PerspectiveDivide() => Vector4.Divide(Position, Position.W);
+		public Vector4 Position { get => (Vector4)Attributes[0]; set => Attributes[0] = value; }
 
-		public override string ToString() => $"{Position}";
+		public override string ToString() => $"{Position.XYZ()}";
 
+		public List<object> Attributes { get; }
 	}
 }

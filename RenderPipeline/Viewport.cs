@@ -4,13 +4,6 @@ namespace RenderPipeline
 {
 	public struct ViewPort
 	{
-		public int TopLeftX;
-		public int TopLeftY;
-		public int Width;
-		public int Height;
-		public float MinDepth;
-		public float MaxDepth;
-
 		public ViewPort(int x, int y, int width, int height, float minZ, float maxZ)
 		{
 			TopLeftX = x;
@@ -20,6 +13,12 @@ namespace RenderPipeline
 			MinDepth = minZ;
 			MaxDepth = maxZ;
 		}
+		public int TopLeftX { get; }
+		public int TopLeftY { get; }
+		public int Width { get; }
+		public int Height { get; }
+		public float MinDepth { get; }
+		public float MaxDepth { get; }
 
 		/// <summary>
 		/// Converts from clip space to screen space.

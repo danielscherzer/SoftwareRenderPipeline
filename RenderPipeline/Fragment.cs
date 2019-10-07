@@ -1,4 +1,6 @@
-﻿namespace RenderPipeline
+﻿using System.Collections.Generic;
+
+namespace RenderPipeline
 {
 	internal class Fragment
 	{
@@ -10,5 +12,7 @@
 
 		public int X { get; }
 		public int Y { get; }
+
+		public List<object> Attributes;
 	}
 }
