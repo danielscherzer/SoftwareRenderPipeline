@@ -28,6 +28,7 @@ namespace RenderPipeline
 
 		internal void DrawTrianglesIndexed(int indexBuffer, int[] attributeBuffers)
 		{
+			var triangles = new List<Triangle>();
 			var vertexShaderOutput = new Vertex[3];
 			int i = 0;
 			foreach (int index in bufferObjects[indexBuffer])
@@ -38,13 +39,17 @@ namespace RenderPipeline
 				if (3 == i)
 				{
 					i = 0;
-					//TODO: VertexAssembler emits a primitive
-					foreach (var fragment in RasterizeTriangle(new Triangle(vertexShaderOutput)))
-					{
-						//TODO: blending
-						FrameBuffer[fragment.X, fragment.Y] = ApplyFragmentShader(fragment);
-					}
+					//vertex assembler emits a primitive
+					triangles.Add(new Triangle(vertexShaderOutput));
 				}
+			}
+			var tessTris = triangles.SelectMany(triangle => ApplyTessellationShader(triangle)); //on GPU parallel
+			var geomTris = tessTris.SelectMany(triangle => ApplyGeometryShader(triangle)); //on GPU parallel
+			var fragments = geomTris.SelectMany(triangle => RasterizeTriangle(triangle)); //on GPU parallel
+			foreach (var fragment in fragments)
+			{
+				//TODO: blending
+				FrameBuffer[fragment.X, fragment.Y] = ApplyFragmentShader(fragment);
 			}
 		}
 
@@ -68,9 +73,8 @@ namespace RenderPipeline
 
 		private static Vertex ApplyVertexShader(Vertex vertex)
 		{
-			
-			var position = new Vector4((Vector3)vertex.Attributes[0], 1f);
-			var color = (Vector4)vertex.Attributes[1];
+			var position = new Vector4(vertex.GetAttribute<Vector3>(0), 1f);
+			var color = vertex.GetAttribute<Vector4>(1);
 			return new Vertex(new object[] { position, color });
 		}
 

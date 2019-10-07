@@ -13,7 +13,7 @@ namespace RenderPipeline
 			vertices[2] = v2;
 		}
 
-		public Triangle(Vertex[] vertices) => this.vertices = vertices;
+		public Triangle(Vertex[] vertices) => vertices.CopyTo(this.vertices, 0);
 
 		public Vertex this[int i]
 		{
@@ -31,10 +31,23 @@ namespace RenderPipeline
 			var count = vertices[0].Attributes.Count;
 			for(int i = 1; i < count; ++i)
 			{
+				var a = vertices[0].Attributes[i];
+				var b = vertices[1].Attributes[i];
+				var c = vertices[2].Attributes[i];
+
 				switch (vertices[0].Attributes[i])
 				{
+					case float attrib:
+						outputAttributes.Add(Barycentric.Interpolate(u, v, (float)a, (float)b, (float)c));
+						break;
+					case Vector2 attrib:
+						outputAttributes.Add(Barycentric.Interpolate(u, v, (Vector2)a, (Vector2)b, (Vector2)c));
+						break;
+					case Vector3 attrib:
+						outputAttributes.Add(Barycentric.Interpolate(u, v, (Vector3)a, (Vector3)b, (Vector3)c));
+						break;
 					case Vector4 attrib:
-						outputAttributes.Add(Barycentric.Interpolate(u, v, (Vector4)vertices[0].Attributes[i], (Vector4)vertices[1].Attributes[i], (Vector4)vertices[2].Attributes[i]));
+						outputAttributes.Add(Barycentric.Interpolate(u, v, (Vector4)a, (Vector4)b, (Vector4)c));
 						break;
 				}
 			}

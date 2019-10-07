@@ -18,12 +18,13 @@ namespace RenderPipeline
 		{
 			Attributes = attributes.ToList();
 		}
-		//public ref TYPE GetAttribute<TYPE>(int index)
+
+		public TYPE GetAttribute<TYPE>(int index) => (TYPE)Attributes[index];
 
 		public Vector4 Position { get => (Vector4)Attributes[0]; set => Attributes[0] = value; }
 
 		public override string ToString() => $"{Position.XYZ()}";
 
-		public List<object> Attributes { get; }
+		public IList<object> Attributes { get; }
 	}
 }
