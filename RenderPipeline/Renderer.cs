@@ -126,6 +126,7 @@ namespace RenderPipeline
 						float z = Barycentric.Interpolate(u, v, triangle[0].Position.Z, triangle[1].Position.Z, triangle[2].Position.Z);
 						if (Zbuffer[x, y] < z)
 						{
+							Zbuffer[x, y] = z;
 							//create fragment
 							var fragment = new Fragment(x, y);
 							fragment.Attributes = triangle.Interpolate(u, v);
