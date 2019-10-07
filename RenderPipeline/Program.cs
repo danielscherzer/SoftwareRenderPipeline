@@ -17,13 +17,13 @@ namespace RenderPipeline
 			});
 			var attributeColor = renderer.CreateBuffer(new Vector4[]
 			{
-				new Vector4(1, 0.5f, 0.5f, 1), new Vector4(1, 0.5f, 0.5f, 1), new Vector4(1, 0.5f, 0.5f, 1),
+				new Vector4(0, 0.5f, 0.5f, 1), new Vector4(0, 0.5f, 0.5f, 1), new Vector4(0, 0.5f, 0.5f, 1),
 				new Vector4(0, 0, 0.5f, 1), new Vector4(1, 0, 0.5f, 1), new Vector4(1, 1, 0.5f, 1)
 			});
 			var indices = renderer.CreateBuffer(new int[] { 0, 1, 2, 3, 4, 5 });
 
 			var time = Stopwatch.StartNew();
-			renderer.FrameBuffer.Clear(new Vector4(0, 0.5f, 0, 1));
+			renderer.FrameBuffer.Clear(new Vector4(0.5f, 0.5f, 0, 1));
 			renderer.Zbuffer.Clear(renderer.ViewPort.MaxDepth);
 
 			renderer.DrawTrianglesIndexed(indices, new int[] { attributePosition, attributeColor });

@@ -53,6 +53,26 @@ namespace RenderPipeline
 			}
 		}
 
+		internal void Test(int indexBufferId, int[] attributeBufferId)
+		{
+			var attributeBuffers = attributeBufferId.Select(id => bufferObjects[id]);
+			var indices = bufferObjects[indexBufferId] as int[];
+//			indices.Select(index => ExecuteVertexShader(attributeBuffers.Select(attributeBuffer => attributeBuffer.GetValue(index)).ToArray()));
+			var vertexShaderOutputs = new List<object[]>(indices.Length);
+			foreach (int index in indices)
+			{
+				var attributes = attributeBuffers.Select(attributeBuffer => attributeBuffer.GetValue(index)).ToArray();
+				vertexShaderOutputs.Add(ExecuteVertexShader(attributes));
+			}
+		}
+
+		private object[] ExecuteVertexShader(object[] attributes)
+		{
+			var position = new Vector4((Vector3)attributes[0], 1f);
+			var color = attributes[1];
+			return new object[] { position, color };
+		}
+
 		private readonly List<Array> bufferObjects = new List<Array>();
 
 		private Vector4 ApplyFragmentShader(Fragment fragment)
@@ -127,13 +147,12 @@ namespace RenderPipeline
 					{
 						/* inside triangle */
 						//early z-test
-						float z = Barycentric.Interpolate(u, v, triangle[0].Position.Z, triangle[1].Position.Z, triangle[2].Position.Z);
+						float z = triangle.InterpolateZ(u, v);
 						if (Zbuffer[x, y] < z)
 						{
 							Zbuffer[x, y] = z;
 							//create fragment
-							var fragment = new Fragment(x, y);
-							fragment.Attributes = triangle.Interpolate(u, v);
+							var fragment = new Fragment(x, y, triangle.InterpolateAttributes(u, v));
 							yield return fragment;
 						}
 					}

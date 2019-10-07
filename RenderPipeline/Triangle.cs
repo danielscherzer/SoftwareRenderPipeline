@@ -1,18 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Numerics;
 
 namespace RenderPipeline
 {
 	public class Triangle
 	{
-		public Triangle(Vertex v0, Vertex v1, Vertex v2)
-		{
-			vertices[0] = v0;
-			vertices[1] = v1;
-			vertices[2] = v2;
-		}
-
 		public Triangle(Vertex[] vertices) => vertices.CopyTo(this.vertices, 0);
 
 		public Vertex this[int i]
@@ -25,7 +17,7 @@ namespace RenderPipeline
 
 		private readonly Vertex[] vertices = new Vertex[3];
 
-		internal List<object> Interpolate(float u, float v)
+		internal List<object> InterpolateAttributes(float u, float v)
 		{
 			var outputAttributes = new List<object>();
 			var count = vertices[0].Attributes.Count;
@@ -53,5 +45,7 @@ namespace RenderPipeline
 			}
 			return outputAttributes;
 		}
+
+		internal float InterpolateZ(float u, float v) => Barycentric.Interpolate(u, v, this[0].Position.Z, this[1].Position.Z, this[2].Position.Z);
 	}
 }

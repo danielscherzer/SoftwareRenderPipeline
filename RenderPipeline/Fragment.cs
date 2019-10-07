@@ -4,15 +4,16 @@ namespace RenderPipeline
 {
 	internal class Fragment
 	{
-		public Fragment(int x, int y)
+		public Fragment(int x, int y, List<object> attributes)
 		{
 			X = x;
 			Y = y;
+			Attributes = attributes;
 		}
 
 		public int X { get; }
 		public int Y { get; }
 
-		public List<object> Attributes;
+		public IReadOnlyList<object> Attributes { get; }
 	}
 }
