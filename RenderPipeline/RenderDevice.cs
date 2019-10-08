@@ -5,9 +5,9 @@ using System.Numerics;
 
 namespace RenderPipeline
 {
-	class Renderer
+	class RenderDevice
 	{
-		public Renderer(int width, int height)
+		public RenderDevice(int width, int height)
 		{
 			FrameBuffer = new Buffer2D<Vector4>(width, height);
 			FrameBuffer.Clear(new Vector4(0, 0, 0, 1));
@@ -19,8 +19,9 @@ namespace RenderPipeline
 		public Buffer2D<Vector4> FrameBuffer { get; }
 		public ViewPort ViewPort { get; }
 		public Buffer2D<float> Zbuffer { get; }
+		public Dictionary<string, object> Uniforms = new Dictionary<string, object>();
 
-		public int CreateBuffer<TYPE>(TYPE[] data) where TYPE : struct
+		public int CreateBuffer(Array data)
 		{
 			bufferObjects.Add(data);
 			return bufferObjects.Count - 1;
@@ -31,10 +32,10 @@ namespace RenderPipeline
 			var triangles = new List<Triangle>();
 			var vertexShaderOutput = new Vertex[3];
 			int i = 0;
-			foreach (int index in bufferObjects[indexBuffer])
+			foreach (uint index in bufferObjects[indexBuffer])
 			{
 				var vertexShaderInputs = new Vertex(attributeBuffers.Select(id => bufferObjects[id].GetValue(index)));
-				vertexShaderOutput[i] = ApplyVertexShader(vertexShaderInputs); // on the GPU this can be done in parallel
+				vertexShaderOutput[i] = ApplyVertexShader(Uniforms, vertexShaderInputs); // on the GPU this can be done in parallel
 				++i;
 				if (3 == i)
 				{
@@ -68,8 +69,10 @@ namespace RenderPipeline
 
 		private object[] ExecuteVertexShader(object[] attributes)
 		{
+			var camera = (Matrix4x4)Uniforms["camera"];
 			var position = new Vector4((Vector3)attributes[0], 1f);
 			var color = attributes[1];
+			
 			return new object[] { position, color };
 		}
 
@@ -91,9 +94,11 @@ namespace RenderPipeline
 			yield return triangle;
 		}
 
-		private static Vertex ApplyVertexShader(Vertex vertex)
+		private static Vertex ApplyVertexShader(IReadOnlyDictionary<string, object> uniforms, Vertex vertex)
 		{
+			var camera = (Matrix4x4)uniforms["camera"];
 			var position = new Vector4(vertex.GetAttribute<Vector3>(0), 1f);
+			position = Vector4.Transform(position, camera);
 			var color = vertex.GetAttribute<Vector4>(1);
 			return new Vertex(new object[] { position, color });
 		}
