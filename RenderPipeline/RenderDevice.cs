@@ -7,6 +7,11 @@ namespace RenderPipeline
 {
 	class RenderDevice
 	{
+		public delegate Vertex VertexShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Vertex vertex);
+		public delegate IEnumerable<Triangle> GeometryShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Triangle triangle);
+		public delegate IEnumerable<Triangle> TessellationShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Triangle triangle);
+		public delegate Vector4 FragmentShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Fragment fragment);
+
 		public RenderDevice(int width, int height)
 		{
 			FrameBuffer = new Buffer2D<Vector4>(width, height);
@@ -21,104 +26,133 @@ namespace RenderPipeline
 		public Buffer2D<float> Zbuffer { get; }
 		public Dictionary<string, object> Uniforms = new Dictionary<string, object>();
 
+		public VertexShaderDelegate VertexShader { get; set; } = DefaultVertexShader;
+		public TessellationShaderDelegate TessellationShader { get; set; } = DefaultTessellationShader;
+		public GeometryShaderDelegate GeometryShader { get; set; } = DefaultGeometryShader;
+
+		public FragmentShaderDelegate FragmentShader { get; set; } = (_, fragment) => Vector4.One;
+
 		public int CreateBuffer(Array data)
 		{
 			bufferObjects.Add(data);
 			return bufferObjects.Count - 1;
 		}
 
-		internal void DrawTrianglesIndexed(int indexBuffer, int[] attributeBuffers)
+		public void DrawTrianglesIndexed(int indexBuffer, int[] attributeBuffers)
 		{
-			var triangles = new List<Triangle>();
-			var vertexShaderOutput = new Vertex[3];
-			int i = 0;
-			foreach (uint index in bufferObjects[indexBuffer])
-			{
-				var vertexShaderInputs = new Vertex(attributeBuffers.Select(id => bufferObjects[id].GetValue(index)));
-				vertexShaderOutput[i] = ApplyVertexShader(Uniforms, vertexShaderInputs); // on the GPU this can be done in parallel
-				++i;
-				if (3 == i)
-				{
-					i = 0;
-					//vertex assembler emits a primitive
-					triangles.Add(new Triangle(vertexShaderOutput));
-				}
-			}
-			var tessTris = triangles.SelectMany(triangle => ApplyTessellationShader(triangle)); //on GPU parallel
-			var geomTris = tessTris.SelectMany(triangle => ApplyGeometryShader(triangle)); //on GPU parallel
-			var fragments = geomTris.SelectMany(triangle => RasterizeTriangle(triangle)); //on GPU parallel
+			//most of the following operations can be done in parallel
+			
+			//extract vertices out of the input buffers
+			var vertexShaderInputStream = InputAssembler(indexBuffer, attributeBuffers);
+			
+			//execute vertex shader on each input vertex
+			var vertexShaderOutputStream = vertexShaderInputStream.Select(inputVertex => VertexShader(Uniforms, inputVertex));
+			
+			// primitive assembly
+			var triangles = PrimitiveAssemblyTriangle(vertexShaderOutputStream);
+			
+			//execute tessellation shader
+			triangles = triangles.SelectMany(triangle => TessellationShader(Uniforms, triangle));
+
+			//execute geometry shader
+			triangles = triangles.SelectMany(triangle => GeometryShader(Uniforms, triangle));
+
+			//TODO: here would come geometrical clipping
+
+			//perspective division
+			triangles = triangles.Select(triangle => PerspectiveDivide(triangle));
+
+			// Back face culling would come here.
+
+			// Transform from clip space to screen space. (view-port transform)
+			triangles = triangles.Select(triangle => ViewportTransform(triangle));
+
+			var fragments = triangles.SelectMany(triangle => RasterizeTriangle(triangle));
 			foreach (var fragment in fragments)
 			{
 				//TODO: blending
-				FrameBuffer[fragment.X, fragment.Y] = ApplyFragmentShader(fragment);
+				FrameBuffer[fragment.X, fragment.Y] = FragmentShader(Uniforms, fragment);
 			}
-		}
-
-		internal void Test(int indexBufferId, int[] attributeBufferId)
-		{
-			var attributeBuffers = attributeBufferId.Select(id => bufferObjects[id]);
-			var indices = bufferObjects[indexBufferId] as int[];
-//			indices.Select(index => ExecuteVertexShader(attributeBuffers.Select(attributeBuffer => attributeBuffer.GetValue(index)).ToArray()));
-			var vertexShaderOutputs = new List<object[]>(indices.Length);
-			foreach (int index in indices)
-			{
-				var attributes = attributeBuffers.Select(attributeBuffer => attributeBuffer.GetValue(index)).ToArray();
-				vertexShaderOutputs.Add(ExecuteVertexShader(attributes));
-			}
-		}
-
-		private object[] ExecuteVertexShader(object[] attributes)
-		{
-			var camera = (Matrix4x4)Uniforms["camera"];
-			var position = new Vector4((Vector3)attributes[0], 1f);
-			var color = attributes[1];
-			
-			return new object[] { position, color };
 		}
 
 		private readonly List<Array> bufferObjects = new List<Array>();
 
-		private Vector4 ApplyFragmentShader(Fragment fragment)
+		/// <summary>
+		/// Generates a stream of vertices out of the input geometry
+		/// </summary>
+		/// <param name="indexBuffer"></param>
+		/// <param name="attributeBuffers"></param>
+		/// <returns></returns>
+		private IEnumerable<Vertex> InputAssembler(int indexBuffer, int[] attributeBuffers)
 		{
-			var color = (Vector4)fragment.Attributes[0];
-			return color;
+			foreach (uint index in bufferObjects[indexBuffer])
+			{
+				yield return new Vertex(attributeBuffers.Select(id => bufferObjects[id].GetValue(index)));
+			}
 		}
 
-		private static IEnumerable<Triangle> ApplyGeometryShader(Triangle triangle)
+		/// <summary>
+		/// Create triangles out of a stream of vertices
+		/// </summary>
+		/// <param name="vertexShaderOutputStream"></param>
+		/// <returns></returns>
+		private IEnumerable<Triangle> PrimitiveAssemblyTriangle(IEnumerable<Vertex> vertexShaderOutputStream)
+		{
+			var it = vertexShaderOutputStream.GetEnumerator();
+			var triangleVertices = new Vertex[3];
+			while (it.MoveNext())
+			{
+				triangleVertices[0] = it.Current;
+				it.MoveNext();
+				triangleVertices[1] = it.Current;
+				it.MoveNext();
+				triangleVertices[2] = it.Current;
+				//primitive assembler emits a triangle primitive
+				yield return new Triangle(triangleVertices);
+			}
+		}
+
+		private static IEnumerable<Triangle> DefaultGeometryShader(IReadOnlyDictionary<string, object> uniforms, Triangle triangle)
 		{
 			yield return triangle;
 		}
 
-		private static IEnumerable<Triangle> ApplyTessellationShader(Triangle triangle)
+		private static IEnumerable<Triangle> DefaultTessellationShader(IReadOnlyDictionary<string, object> uniforms, Triangle triangle)
 		{
 			yield return triangle;
 		}
 
-		private static Vertex ApplyVertexShader(IReadOnlyDictionary<string, object> uniforms, Vertex vertex)
+		private static Vertex DefaultVertexShader(IReadOnlyDictionary<string, object> uniforms, Vertex vertex)
 		{
-			var camera = (Matrix4x4)uniforms["camera"];
-			var position = new Vector4(vertex.GetAttribute<Vector3>(0), 1f);
-			position = Vector4.Transform(position, camera);
-			var color = vertex.GetAttribute<Vector4>(1);
-			return new Vertex(new object[] { position, color });
+			var position = vertex.GetAttribute<Vector4>(0);
+			return new Vertex(new object[] { position });
 		}
 
-		private IEnumerable<Fragment> RasterizeTriangle(Triangle triangle)
+		private Triangle PerspectiveDivide(Triangle triangle)
 		{
-			// perspective division
 			for (int i = 0; i < 3; ++i)
 			{
 				var position = triangle[i].Position;
 				triangle[i].Position = Vector4.Divide(position, position.W);
 			}
+			return triangle;
+		}
 
-			// Back face culling would come here.
-
-			// Transform from clip space to screen space. (view-port transform)
-			var p = new Vector2[3];
+		private Triangle ViewportTransform(Triangle triangle)
+		{
 			for (int i = 0; i < 3; ++i)
 			{
 				triangle[i].Position = ViewPort.Transform(triangle[i].Position);
+			}
+			return triangle;
+		}
+
+		private IEnumerable<Fragment> RasterizeTriangle(Triangle triangle)
+		{
+			// get screen coordinates
+			var p = new Vector2[3];
+			for (int i = 0; i < 3; ++i)
+			{
 				p[i] = triangle[i].Position.XY();
 			}
 

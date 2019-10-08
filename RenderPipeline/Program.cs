@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Numerics;
-using Zenseless.Geometry;
 
 namespace RenderPipeline
 {
@@ -14,21 +13,33 @@ namespace RenderPipeline
 			var triangles = new SimpleDrawable(renderer);
 			var suzanne = new FileDrawable(@"Content\suzanne.obj", renderer);
 
+			renderer.VertexShader = (uniforms, vertex) =>
+			{
+				var mtxCamera = (Matrix4x4)uniforms["camera"];
+				var position = new Vector4(vertex.GetAttribute<Vector3>(0), 1f);
+				position = Vector4.Transform(position, mtxCamera);
+				var color = vertex.GetAttribute<Vector4>(1);
+				return new Vertex(new object[] { position, color });
+			};
+
+			renderer.FragmentShader = (uniforms, fragment) =>
+			{
+				var color = (Vector4)fragment.Attributes[0];
+				return color;
+			};
+
+			renderer.Uniforms["camera"] = Matrix4x4.Identity;
+
 			var time = Stopwatch.StartNew();
 
-			renderer.FrameBuffer.Clear(new Vector4(0.5f, 0.5f, 0, 1));
+			renderer.FrameBuffer.Clear(new Vector4(0.5f, 0.5f, 0.5f, 1));
 			renderer.Zbuffer.Clear(renderer.ViewPort.MaxDepth);
 
-			var camera = new Rotation(180f, Axis.Y);
-
-			renderer.Uniforms["camera"] = camera.Matrix;
 			//triangles.Draw(renderer);
 			suzanne.Draw(renderer);
 
-			Console.WriteLine(time.ElapsedMilliseconds);
-			time.Restart();
+			Console.WriteLine($"render time: {time.ElapsedMilliseconds}msec");
 			renderer.FrameBuffer.ToImage(@"d:\frame.png");
-			Console.WriteLine(time.ElapsedMilliseconds);
 		}
 	}
 }

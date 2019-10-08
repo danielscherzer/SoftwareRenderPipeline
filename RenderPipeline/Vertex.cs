@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -19,7 +20,12 @@ namespace RenderPipeline
 			Attributes = attributes.ToList();
 		}
 
-		public TYPE GetAttribute<TYPE>(int index) => (TYPE)Attributes[index];
+		public TYPE GetAttribute<TYPE>(int index)
+		{
+			var attrib = Attributes[index];
+			if (!(attrib is TYPE)) throw new ArgumentException($"Given argument type {typeof(TYPE).Name} incompatible with real type {attrib.GetType().Name}");
+			return (TYPE)attrib;
+		}
 
 		public Vector4 Position { get => (Vector4)Attributes[0]; set => Attributes[0] = value; }
 

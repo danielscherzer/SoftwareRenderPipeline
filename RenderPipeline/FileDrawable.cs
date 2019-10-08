@@ -15,6 +15,7 @@ namespace RenderPipeline
 		{
 			var bytes = File.ReadAllBytes(fileName);
 			var mesh = Obj2Mesh.FromObj(bytes);
+			mesh = mesh.Transform(Transformation.Combine(Transformation.Rotation(180f, Axis.Y), Transformation.Scale(0.7f)));
 			indices = renderer.CreateBuffer(mesh.IDs.ToArray());
 			var positions = mesh.GetAttribute("position").ToArray();
 			var normals = mesh.GetAttribute("normal").GetList<Vector3>();
