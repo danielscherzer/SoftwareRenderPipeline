@@ -10,12 +10,14 @@ namespace RenderPipeline
 		{
 			var renderer = new RenderDevice(300, 300);
 
+			// load model data
 			var triangles = new SimpleDrawable(renderer);
 			var suzanne = new FileDrawable(@"Content\suzanne.obj", renderer);
 
+			// set render state
 			renderer.RenderState.VertexShader = (uniforms, vertex) =>
 			{
-				var mtxCamera = (Matrix4x4)uniforms["camera"];
+				var mtxCamera = (Matrix4x4)uniforms["modelViewProjection"];
 				var position = new Vector4(vertex.GetAttribute<Vector3>(0), 1f);
 				position = Vector4.Transform(position, mtxCamera);
 				var color = vertex.GetAttribute<Vector4>(1);
@@ -28,13 +30,14 @@ namespace RenderPipeline
 				return color;
 			};
 
-			renderer.RenderState.Uniforms["camera"] = Matrix4x4.Identity;
+			renderer.RenderState.Uniforms["modelViewProjection"] = Matrix4x4.Identity;
 
 			var time = Stopwatch.StartNew();
 
 			renderer.FrameBuffer.Clear(new Vector4(0.5f, 0.5f, 0.5f, 1));
 			renderer.Zbuffer.Clear(renderer.ViewPort.MaxDepth);
 
+			// draw
 			//triangles.Draw(renderer);
 			suzanne.Draw(renderer);
 

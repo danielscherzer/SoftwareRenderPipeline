@@ -171,7 +171,7 @@ namespace RenderPipeline
 						/* inside triangle */
 						//early z-test
 						float z = triangle.InterpolateZ(u, v);
-						if (RenderState.ZTest || Zbuffer[x, y] < z)
+						if (Zbuffer[x, y] < z)
 						{
 							Zbuffer[x, y] = z;
 							//create fragment

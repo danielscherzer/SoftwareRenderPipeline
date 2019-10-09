@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.852
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RenderPipeline", "RenderPipeline\RenderPipeline.csproj", "{F1A8613D-5E22-4563-8A54-847F2DBD70D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RenderPipeline", "RenderPipeline\RenderPipeline.csproj", "{F1A8613D-5E22-4563-8A54-847F2DBD70D5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{75A405DC-EFE4-4932-8B16-56A53AB9687E}"
+	ProjectSection(SolutionItems) = preProject
+		readme.md = readme.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
