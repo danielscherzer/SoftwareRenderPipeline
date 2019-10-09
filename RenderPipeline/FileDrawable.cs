@@ -7,27 +7,27 @@ namespace RenderPipeline
 {
 	internal class FileDrawable
 	{
-		private readonly int indices;
-		private readonly int attributeColor;
-		private readonly int attributePosition;
+		private readonly Handle indices;
+		private readonly Handle attributeColor;
+		private readonly Handle attributePosition;
 
 		public FileDrawable(string fileName, RenderDevice renderer)
 		{
 			var bytes = File.ReadAllBytes(fileName);
 			var mesh = Obj2Mesh.FromObj(bytes);
 			mesh = mesh.Transform(Transformation.Combine(Transformation.Rotation(180f, Axis.Y), Transformation.Scale(0.7f)));
-			indices = renderer.CreateBuffer(mesh.IDs.ToArray());
+			indices = renderer.CopyToVideoRAM(mesh.IDs.ToArray());
 			var positions = mesh.GetAttribute("position").ToArray();
 			var normals = mesh.GetAttribute("normal").GetList<Vector3>();
-			attributePosition = renderer.CreateBuffer(positions);
+			attributePosition = renderer.CopyToVideoRAM(positions);
 
 			var normalsAsColors = normals.Select(n => new Vector4(n, 1));
-			attributeColor = renderer.CreateBuffer(normalsAsColors.ToArray());
+			attributeColor = renderer.CopyToVideoRAM(normalsAsColors.ToArray());
 		}
 
 		internal void Draw(RenderDevice renderer)
 		{
-			renderer.DrawTrianglesIndexed(indices, new int[] { attributePosition, attributeColor });
+			renderer.DrawTrianglesIndexed(indices, new Handle[] { attributePosition, attributeColor });
 		}
 	}
 }

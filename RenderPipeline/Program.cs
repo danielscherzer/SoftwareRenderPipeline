@@ -13,7 +13,7 @@ namespace RenderPipeline
 			var triangles = new SimpleDrawable(renderer);
 			var suzanne = new FileDrawable(@"Content\suzanne.obj", renderer);
 
-			renderer.VertexShader = (uniforms, vertex) =>
+			renderer.RenderState.VertexShader = (uniforms, vertex) =>
 			{
 				var mtxCamera = (Matrix4x4)uniforms["camera"];
 				var position = new Vector4(vertex.GetAttribute<Vector3>(0), 1f);
@@ -22,13 +22,13 @@ namespace RenderPipeline
 				return new Vertex(new object[] { position, color });
 			};
 
-			renderer.FragmentShader = (uniforms, fragment) =>
+			renderer.RenderState.FragmentShader = (uniforms, fragment) =>
 			{
 				var color = (Vector4)fragment.Attributes[0];
 				return color;
 			};
 
-			renderer.Uniforms["camera"] = Matrix4x4.Identity;
+			renderer.RenderState.Uniforms["camera"] = Matrix4x4.Identity;
 
 			var time = Stopwatch.StartNew();
 

@@ -22,23 +22,19 @@ namespace RenderPipeline
 		}
 
 		public Buffer2D<Vector4> FrameBuffer { get; }
-		public ViewPort ViewPort { get; }
 		public Buffer2D<float> Zbuffer { get; }
-		public Dictionary<string, object> Uniforms = new Dictionary<string, object>();
+		public ViewPort ViewPort { get; set; }
 
-		public VertexShaderDelegate VertexShader { get; set; } = DefaultVertexShader;
-		public TessellationShaderDelegate TessellationShader { get; set; } = DefaultTessellationShader;
-		public GeometryShaderDelegate GeometryShader { get; set; } = DefaultGeometryShader;
 
-		public FragmentShaderDelegate FragmentShader { get; set; } = (_, fragment) => Vector4.One;
+		public RenderState RenderState { get; set; } = new RenderState();
 
-		public int CreateBuffer(Array data)
+		public Handle CopyToVideoRAM(Array data)
 		{
 			bufferObjects.Add(data);
-			return bufferObjects.Count - 1;
+			return new Handle(bufferObjects.Count - 1);
 		}
 
-		public void DrawTrianglesIndexed(int indexBuffer, int[] attributeBuffers)
+		public void DrawTrianglesIndexed(Handle indexBuffer, Handle[] attributeBuffers)
 		{
 			//most of the following operations can be done in parallel
 			
@@ -46,16 +42,16 @@ namespace RenderPipeline
 			var vertexShaderInputStream = InputAssembler(indexBuffer, attributeBuffers);
 			
 			//execute vertex shader on each input vertex
-			var vertexShaderOutputStream = vertexShaderInputStream.Select(inputVertex => VertexShader(Uniforms, inputVertex));
+			var vertexShaderOutputStream = vertexShaderInputStream.Select(inputVertex => RenderState.VertexShader(RenderState.Uniforms, inputVertex));
 			
 			// primitive assembly
 			var triangles = PrimitiveAssemblyTriangle(vertexShaderOutputStream);
 			
 			//execute tessellation shader
-			triangles = triangles.SelectMany(triangle => TessellationShader(Uniforms, triangle));
+			triangles = triangles.SelectMany(triangle => RenderState.TessellationShader(RenderState.Uniforms, triangle));
 
 			//execute geometry shader
-			triangles = triangles.SelectMany(triangle => GeometryShader(Uniforms, triangle));
+			triangles = triangles.SelectMany(triangle => RenderState.GeometryShader(RenderState.Uniforms, triangle));
 
 			//TODO: here would come geometrical clipping
 
@@ -70,8 +66,12 @@ namespace RenderPipeline
 			var fragments = triangles.SelectMany(triangle => RasterizeTriangle(triangle));
 			foreach (var fragment in fragments)
 			{
+				var color = RenderState.FragmentShader(RenderState.Uniforms, fragment);
+				
 				//TODO: blending
-				FrameBuffer[fragment.X, fragment.Y] = FragmentShader(Uniforms, fragment);
+				//if(RenderState.Blending)
+
+				FrameBuffer[fragment.X, fragment.Y] = color;
 			}
 		}
 
@@ -83,11 +83,11 @@ namespace RenderPipeline
 		/// <param name="indexBuffer"></param>
 		/// <param name="attributeBuffers"></param>
 		/// <returns></returns>
-		private IEnumerable<Vertex> InputAssembler(int indexBuffer, int[] attributeBuffers)
+		private IEnumerable<Vertex> InputAssembler(Handle indexBuffer, Handle[] attributeBuffers)
 		{
-			foreach (uint index in bufferObjects[indexBuffer])
+			foreach (uint index in bufferObjects[indexBuffer.Value])
 			{
-				yield return new Vertex(attributeBuffers.Select(id => bufferObjects[id].GetValue(index)));
+				yield return new Vertex(attributeBuffers.Select(handle => bufferObjects[handle.Value].GetValue(index)));
 			}
 		}
 
@@ -110,22 +110,6 @@ namespace RenderPipeline
 				//primitive assembler emits a triangle primitive
 				yield return new Triangle(triangleVertices);
 			}
-		}
-
-		private static IEnumerable<Triangle> DefaultGeometryShader(IReadOnlyDictionary<string, object> uniforms, Triangle triangle)
-		{
-			yield return triangle;
-		}
-
-		private static IEnumerable<Triangle> DefaultTessellationShader(IReadOnlyDictionary<string, object> uniforms, Triangle triangle)
-		{
-			yield return triangle;
-		}
-
-		private static Vertex DefaultVertexShader(IReadOnlyDictionary<string, object> uniforms, Vertex vertex)
-		{
-			var position = vertex.GetAttribute<Vector4>(0);
-			return new Vertex(new object[] { position });
 		}
 
 		private Triangle PerspectiveDivide(Triangle triangle)
@@ -187,7 +171,7 @@ namespace RenderPipeline
 						/* inside triangle */
 						//early z-test
 						float z = triangle.InterpolateZ(u, v);
-						if (Zbuffer[x, y] < z)
+						if (RenderState.ZTest || Zbuffer[x, y] < z)
 						{
 							Zbuffer[x, y] = z;
 							//create fragment
