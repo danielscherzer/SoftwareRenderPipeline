@@ -2,12 +2,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.14.4" />
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.23.2.1" />
     <PackageReference Include="Zenseless.Geometry" Version="0.5.121" />
+    <PackageReference Include="Zenseless.Spatial" Version="0.1.7" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Zenseless.Spatial;
 
 namespace RenderPipeline
 {
@@ -14,15 +15,15 @@ namespace RenderPipeline
 
 		public RenderDevice(int width, int height)
 		{
-			FrameBuffer = new Buffer2D<Vector4>(width, height);
-			FrameBuffer.Clear(new Vector4(0, 0, 0, 1));
-			Zbuffer = new Buffer2D<float>(width, height);
-			ViewPort = new ViewPort(0, 0, FrameBuffer.Width, FrameBuffer.Height, 0, -1);
-			Zbuffer.Clear(ViewPort.MaxDepth);
+			FrameBuffer = new Grid<Vector4>(width, height);
+			FrameBuffer.Fill(new Vector4(0, 0, 0, 1));
+			Zbuffer = new Grid<float>(width, height);
+			ViewPort = new ViewPort(0, 0, FrameBuffer.Columns, FrameBuffer.Rows, 0, -1);
+			Zbuffer.Fill(ViewPort.MaxDepth);
 		}
 
-		public Buffer2D<Vector4> FrameBuffer { get; }
-		public Buffer2D<float> Zbuffer { get; }
+		public Grid<Vector4> FrameBuffer { get; }
+		public Grid<float> Zbuffer { get; }
 		public ViewPort ViewPort { get; set; }
 
 
@@ -75,7 +76,7 @@ namespace RenderPipeline
 			}
 		}
 
-		private readonly List<Array> bufferObjects = new List<Array>();
+		private readonly List<Array> bufferObjects = new();
 
 		/// <summary>
 		/// Generates a stream of vertices out of the input geometry

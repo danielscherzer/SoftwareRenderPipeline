@@ -1,15 +1,16 @@
 ﻿using ImageMagick;
 using System.Numerics;
+using Zenseless.Spatial;
 
 namespace RenderPipeline
 {
 	public static class BufferToImage
 	{
-		public static void ToImage(this Buffer2D<Vector4> frameBuffer, string fileName)
+		public static void ToImage(this Grid<Vector4> frameBuffer, string fileName)
 		{
-			var bytes = new byte[frameBuffer.Width * frameBuffer.Height * 4];
+			var bytes = new byte[frameBuffer.Columns * frameBuffer.Rows * 4];
 			var id = 0;
-			foreach (var pixel in frameBuffer)
+			foreach (var pixel in frameBuffer.AsReadOnly)
 			{
 				var clampedColor = Vector4.Multiply(255f, Vector4.Max(Vector4.Zero, Vector4.Min(pixel, Vector4.One)));
 				bytes[id++] = (byte)clampedColor.X;
@@ -20,13 +21,11 @@ namespace RenderPipeline
 			var settings = new MagickReadSettings
 			{
 				Format = MagickFormat.Rgba,
-				Width = frameBuffer.Width,
-				Height = frameBuffer.Height
+				Width = frameBuffer.Columns,
+				Height = frameBuffer.Rows
 			};
-			using (var image = new MagickImage(bytes, settings))
-			{
-				image.Write(fileName);
-			}
+			using var image = new MagickImage(bytes, settings);
+			image.Write(fileName);
 
 		}
 	}

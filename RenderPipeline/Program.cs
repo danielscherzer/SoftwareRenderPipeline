@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Numerics;
+using System.Reflection;
 
 namespace RenderPipeline
 {
 	class Program
 	{
-		static void Main(string[] args)
+		static void Main(string[] _)
 		{
 			var renderer = new RenderDevice(300, 300);
 
@@ -34,15 +36,16 @@ namespace RenderPipeline
 
 			var time = Stopwatch.StartNew();
 
-			renderer.FrameBuffer.Clear(new Vector4(0.5f, 0.5f, 0.5f, 1));
-			renderer.Zbuffer.Clear(renderer.ViewPort.MaxDepth);
+			renderer.FrameBuffer.Fill(new Vector4(0.5f, 0.5f, 0.5f, 1));
+			renderer.Zbuffer.Fill(renderer.ViewPort.MaxDepth);
 
 			// draw
 			//triangles.Draw(renderer);
 			suzanne.Draw(renderer);
 
 			Console.WriteLine($"render time: {time.ElapsedMilliseconds}msec");
-			renderer.FrameBuffer.ToImage(@"d:\frame.png");
+			var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+			renderer.FrameBuffer.ToImage(Path.Combine(exeDir, "frame.png"));
 		}
 	}
 }
