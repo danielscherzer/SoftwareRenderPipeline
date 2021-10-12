@@ -7,8 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="7.23.2.1" />
-    <PackageReference Include="Zenseless.Geometry" Version="0.5.121" />
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="8.3.3" />
+    <PackageReference Include="Zenseless.Geometry" Version="0.5.149" />
+    <PackageReference Include="Zenseless.Resources" Version="0.1.9" />
     <PackageReference Include="Zenseless.Spatial" Version="0.1.7" />
   </ItemGroup>
 

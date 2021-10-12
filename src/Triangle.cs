@@ -29,16 +29,16 @@ namespace RenderPipeline
 
 				switch (vertices[0].Attributes[i])
 				{
-					case float attrib:
+					case float:
 						outputAttributes.Add(Barycentric.Interpolate(u, v, (float)a, (float)b, (float)c));
 						break;
-					case Vector2 attrib:
+					case Vector2:
 						outputAttributes.Add(Barycentric.Interpolate(u, v, (Vector2)a, (Vector2)b, (Vector2)c));
 						break;
-					case Vector3 attrib:
+					case Vector3:
 						outputAttributes.Add(Barycentric.Interpolate(u, v, (Vector3)a, (Vector3)b, (Vector3)c));
 						break;
-					case Vector4 attrib:
+					case Vector4:
 						outputAttributes.Add(Barycentric.Interpolate(u, v, (Vector4)a, (Vector4)b, (Vector4)c));
 						break;
 				}

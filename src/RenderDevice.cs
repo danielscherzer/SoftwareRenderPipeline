@@ -18,14 +18,13 @@ namespace RenderPipeline
 			FrameBuffer = new Grid<Vector4>(width, height);
 			FrameBuffer.Fill(new Vector4(0, 0, 0, 1));
 			Zbuffer = new Grid<float>(width, height);
-			ViewPort = new ViewPort(0, 0, FrameBuffer.Columns, FrameBuffer.Rows, 0, -1);
-			Zbuffer.Fill(ViewPort.MaxDepth);
+			ViewPort = new ViewPort(0, 0, FrameBuffer.Columns, FrameBuffer.Rows);
+			Zbuffer.Fill(ViewPort.FarZ);
 		}
 
 		public Grid<Vector4> FrameBuffer { get; }
 		public Grid<float> Zbuffer { get; }
 		public ViewPort ViewPort { get; set; }
-
 
 		public RenderState RenderState { get; set; } = new RenderState();
 
@@ -88,7 +87,8 @@ namespace RenderPipeline
 		{
 			foreach (uint index in bufferObjects[indexBuffer.Value])
 			{
-				yield return new Vertex(attributeBuffers.Select(handle => bufferObjects[handle.Value].GetValue(index)));
+				var vertexAttributes = attributeBuffers.Select(handle => bufferObjects[handle.Value].GetValue(index) ?? throw new Exception("Null buffer object"));
+				yield return new Vertex(vertexAttributes);
 			}
 		}
 
@@ -97,7 +97,7 @@ namespace RenderPipeline
 		/// </summary>
 		/// <param name="vertexShaderOutputStream"></param>
 		/// <returns></returns>
-		private IEnumerable<Triangle> PrimitiveAssemblyTriangle(IEnumerable<Vertex> vertexShaderOutputStream)
+		private static IEnumerable<Triangle> PrimitiveAssemblyTriangle(IEnumerable<Vertex> vertexShaderOutputStream)
 		{
 			var it = vertexShaderOutputStream.GetEnumerator();
 			var triangleVertices = new Vertex[3];
@@ -113,7 +113,7 @@ namespace RenderPipeline
 			}
 		}
 
-		private Triangle PerspectiveDivide(Triangle triangle)
+		private static Triangle PerspectiveDivide(Triangle triangle)
 		{
 			for (int i = 0; i < 3; ++i)
 			{
@@ -140,23 +140,30 @@ namespace RenderPipeline
 			{
 				p[i] = triangle[i].Position.XY();
 			}
+			static float Det(Vector2 a, Vector2 b) => a.X * b.Y - b.X * a.Y;
+
+			// rasterize - triangle setup
+			var ca = p[0] - p[2];
+			var cb = p[1] - p[2];
+			var det = Det(ca, cb);
+			switch (RenderState.FaceCulling)
+			{
+				case FaceCullingMode.NONE: break;
+				case FaceCullingMode.CW: if(0 >= det) yield break; break;
+				case FaceCullingMode.CCW: if (0 <= det) yield break; break;
+			}
 
 			// get the bounding box of the 2D triangle
 			var min = Vector2.Min(p[0], Vector2.Min(p[1], p[2]));
 			var max = Vector2.Max(p[0], Vector2.Max(p[1], p[2]));
 
 			// Clipping of box to view-port bounds
-			var viewPortMin = new Vector2(ViewPort.TopLeftX, ViewPort.TopLeftY);
+			var viewPortMin = new Vector2(ViewPort.MinX, ViewPort.MinY);
 			var viewPortMax = viewPortMin + new Vector2(ViewPort.Width, ViewPort.Height) - Vector2.One;
 			min = Vector2.Max(min, viewPortMin);
 			max = Vector2.Min(max, viewPortMax);
 
-			// rasterize - triangle setup
-			float Det(Vector2 a, Vector2 b) => a.X * b.Y - b.X * a.Y;
-
-			var ca = p[0] - p[2];
-			var cb = p[1] - p[2];
-			var fact = 1.0f / Det(ca, cb);
+			var fact = 1.0f / det;
 			const float eps = 0.0001f;
 			// rasterization
 			for (int x = (int)min.X; x <= (int)max.X; x++)

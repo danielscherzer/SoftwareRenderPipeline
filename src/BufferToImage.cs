@@ -22,9 +22,10 @@ namespace RenderPipeline
 			{
 				Format = MagickFormat.Rgba,
 				Width = frameBuffer.Columns,
-				Height = frameBuffer.Rows
+				Height = frameBuffer.Rows,
 			};
 			using var image = new MagickImage(bytes, settings);
+			image.Flip(); // images have positive y-axis going downwards
 			image.Write(fileName);
 
 		}

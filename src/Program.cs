@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
+using Zenseless.Geometry;
+using Zenseless.Patterns;
 
 namespace RenderPipeline
 {
@@ -13,8 +15,8 @@ namespace RenderPipeline
 			var renderer = new RenderDevice(300, 300);
 
 			// load model data
-			var triangles = new SimpleDrawable(renderer);
-			var suzanne = new FileDrawable(@"Content\suzanne.obj", renderer);
+			var triangles = new ColoredTrianglesDrawable(renderer);
+			var suzanne = new FileDrawable(Path.Combine(PathTools.GetCurrentProcessDir(), "Content", "suzanne.obj"), renderer);
 
 			// set render state
 			renderer.RenderState.VertexShader = (uniforms, vertex) =>
@@ -33,19 +35,21 @@ namespace RenderPipeline
 			};
 
 			renderer.RenderState.Uniforms["modelViewProjection"] = Matrix4x4.Identity;
+			renderer.RenderState.FaceCulling = FaceCullingMode.CW;
+			renderer.FrameBuffer.Fill(new Vector4(0.5f, 0.5f, 0.5f, 1));
+			renderer.Zbuffer.Fill(renderer.ViewPort.FarZ);
 
 			var time = Stopwatch.StartNew();
-
-			renderer.FrameBuffer.Fill(new Vector4(0.5f, 0.5f, 0.5f, 1));
-			renderer.Zbuffer.Fill(renderer.ViewPort.MaxDepth);
-
 			// draw
 			//triangles.Draw(renderer);
 			suzanne.Draw(renderer);
 
 			Console.WriteLine($"render time: {time.ElapsedMilliseconds}msec");
-			var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-			renderer.FrameBuffer.ToImage(Path.Combine(exeDir, "frame.png"));
+			var assemblyName = Assembly.GetExecutingAssembly().Location;
+			var assemblyDir = Path.GetDirectoryName(assemblyName) ?? assemblyName;
+			renderer.FrameBuffer.ToImage(Path.Combine(assemblyDir, "frame.png"));
+
+			Process.Start("explorer.exe", "frame.png"); // for debug output
 		}
 	}
 }
