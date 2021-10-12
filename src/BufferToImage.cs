@@ -25,7 +25,7 @@ namespace RenderPipeline
 				Height = frameBuffer.Rows,
 			};
 			using var image = new MagickImage(bytes, settings);
-			image.Flip(); // images have positive y-axis going downwards
+			image.Flip(); // images have positive y-axis going downwards and our grid is filled right-handed y-axis going upwards
 			image.Write(fileName);
 
 		}

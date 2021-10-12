@@ -3,7 +3,7 @@
 namespace RenderPipeline
 {
 	/// <summary>
-	/// Idea from http://msdn.microsoft.com/en-us/library/bb205126(v=vs.85).aspx
+	/// Idea from https://docs.microsoft.com/en-us/windows/win32/direct3d11/d3d10-graphics-programming-guide-rasterizer-stage-getting-started?redirectedfrom=MSDN
 	/// But my origin is in the lower left corner with positive y upwards
 	/// and my positive z-axis is towards the viewer
 	/// a right-handed coordinates system
@@ -28,7 +28,7 @@ namespace RenderPipeline
 
 		/// <summary>
 		/// Converts from clip space to screen space.
-		/// Idea from http://msdn.microsoft.com/en-us/library/bb205126(v=vs.85).aspx
+		/// Idea from https://docs.microsoft.com/en-us/windows/win32/direct3d11/d3d10-graphics-programming-guide-rasterizer-stage-getting-started?redirectedfrom=MSDN
 		/// But my origin is in the lower left corner with positive y upwards
 		/// and my positive z-axis is towards the viewer
 		/// a right-handed coordinates system

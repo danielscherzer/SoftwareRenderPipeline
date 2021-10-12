@@ -1,24 +1,27 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using Zenseless.Geometry;
+using Zenseless.Patterns;
 
 namespace RenderPipeline
 {
 	internal class FileDrawable
 	{
-		private readonly Handle indices;
-		private readonly Handle attributeColor;
-		private readonly Handle attributePosition;
+		private readonly Handle<Array> indices;
+		private readonly Handle<Array> attributeColor;
+		private readonly Handle<Array> attributePosition;
 
 		public FileDrawable(string fileName, RenderDevice renderer)
 		{
 			byte[] bytes = File.ReadAllBytes(fileName);
 			DefaultMesh mesh = Obj2Mesh.FromObj(bytes);
 			indices = renderer.CopyToVideoRAM(mesh.IDs.ToArray());
-			var positions = mesh.GetAttribute("position").ToArray();
-			var normals = mesh.GetAttribute("normal").GetList<Vector3>();
-			attributePosition = renderer.CopyToVideoRAM(positions);
+			List<Vector3> positions = mesh.Position;
+			List<Vector3> normals = mesh.Normal;
+			attributePosition = renderer.CopyToVideoRAM(positions.ToArray());
 
 			var normalsAsColors = normals.Select(n => new Vector4(n, 1));
 			attributeColor = renderer.CopyToVideoRAM(normalsAsColors.ToArray());
@@ -26,7 +29,7 @@ namespace RenderPipeline
 
 		internal void Draw(RenderDevice renderer)
 		{
-			renderer.DrawTrianglesIndexed(indices, new Handle[] { attributePosition, attributeColor });
+			renderer.DrawTrianglesIndexed(indices, new Handle<Array>[] { attributePosition, attributeColor });
 		}
 	}
 }

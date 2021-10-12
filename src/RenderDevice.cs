@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Zenseless.Patterns;
 using Zenseless.Spatial;
 
 namespace RenderPipeline
@@ -28,13 +29,13 @@ namespace RenderPipeline
 
 		public RenderState RenderState { get; set; } = new RenderState();
 
-		public Handle CopyToVideoRAM(Array data)
+		public Handle<Array> CopyToVideoRAM(Array data)
 		{
 			bufferObjects.Add(data);
-			return new Handle(bufferObjects.Count - 1);
+			return new Handle<Array>(bufferObjects.Count - 1);
 		}
 
-		public void DrawTrianglesIndexed(Handle indexBuffer, Handle[] attributeBuffers)
+		public void DrawTrianglesIndexed(Handle<Array> indexBuffer, Handle<Array>[] attributeBuffers)
 		{
 			//most of the following operations can be done in parallel
 			
@@ -83,11 +84,11 @@ namespace RenderPipeline
 		/// <param name="indexBuffer"></param>
 		/// <param name="attributeBuffers"></param>
 		/// <returns></returns>
-		private IEnumerable<Vertex> InputAssembler(Handle indexBuffer, Handle[] attributeBuffers)
+		private IEnumerable<Vertex> InputAssembler(Handle<Array> indexBuffer, Handle<Array>[] attributeBuffers)
 		{
-			foreach (uint index in bufferObjects[indexBuffer.Value])
+			foreach (uint index in bufferObjects[indexBuffer.Id])
 			{
-				var vertexAttributes = attributeBuffers.Select(handle => bufferObjects[handle.Value].GetValue(index) ?? throw new Exception("Null buffer object"));
+				var vertexAttributes = attributeBuffers.Select(handle => bufferObjects[handle.Id].GetValue(index) ?? throw new Exception("Null buffer object"));
 				yield return new Vertex(vertexAttributes);
 			}
 		}
