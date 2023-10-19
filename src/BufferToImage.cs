@@ -10,7 +10,7 @@ namespace RenderPipeline
 		{
 			var bytes = new byte[frameBuffer.Columns * frameBuffer.Rows * 4];
 			var id = 0;
-			foreach (var pixel in frameBuffer.AsReadOnly)
+			foreach (var pixel in frameBuffer.AsReadOnly())
 			{
 				var clampedColor = Vector4.Multiply(255f, Vector4.Max(Vector4.Zero, Vector4.Min(pixel, Vector4.One)));
 				bytes[id++] = (byte)clampedColor.X;
