@@ -21,8 +21,8 @@ namespace RenderPipeline
 			var settings = new MagickReadSettings
 			{
 				Format = MagickFormat.Rgba,
-				Width = frameBuffer.Columns,
-				Height = frameBuffer.Rows,
+				Width = (uint)frameBuffer.Columns,
+				Height = (uint)frameBuffer.Rows,
 			};
 			using var image = new MagickImage(bytes, settings);
 			image.Flip(); // images have positive y-axis going downwards and our grid is filled right-handed y-axis going upwards
