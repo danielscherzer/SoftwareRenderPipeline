@@ -12,7 +12,7 @@ var renderer = new RenderDevice(300, 300);
 var triangles = new ColoredTrianglesDrawable(renderer);
 var assemblyName = Assembly.GetExecutingAssembly().Location;
 var assemblyDir = Path.GetDirectoryName(assemblyName) ?? assemblyName;
-var suzanne = new FileDrawable(Path.Combine(assemblyDir, "Content", "suzanne.obj"), renderer);
+var suzanne = new ObjDrawable(File.ReadAllBytes(Path.Combine(assemblyDir, "suzanne.obj")), renderer);
 
 // set render state
 renderer.RenderState.VertexShader = (uniforms, vertex) =>
@@ -21,7 +21,7 @@ renderer.RenderState.VertexShader = (uniforms, vertex) =>
 	var position = new Vector4(vertex.GetAttribute<Vector3>(0), 1f);
 	position = Vector4.Transform(position, mtxMVP);
 	var color = vertex.GetAttribute<Vector4>(1);
-	return new Vertex(new object[] { position, color });
+	return new Vertex([position, color]);
 };
 
 renderer.RenderState.FragmentShader = (uniforms, fragment) =>

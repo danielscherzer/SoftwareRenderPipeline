@@ -1,9 +1,8 @@
-﻿namespace RenderPipeline
+﻿namespace RenderPipeline;
+
+public enum FaceCullingMode
 {
-	public enum FaceCullingMode
-	{
-		NONE,
-		CW,
-		CCW,
-	}
+	NONE,
+	CW,
+	CCW,
 }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,13 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="content\suzanne.obj">
+    <None Update="content/*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.8.1" />
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.0" />
     <PackageReference Include="Zenseless.Geometry" Version="0.5.149" />
     <PackageReference Include="Zenseless.Patterns" Version="0.6.39" />
     <PackageReference Include="Zenseless.Spatial" Version="0.1.36" />

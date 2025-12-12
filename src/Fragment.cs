@@ -1,19 +1,11 @@
 ﻿using System.Collections.Generic;
 
-namespace RenderPipeline
+namespace RenderPipeline;
+
+internal class Fragment(int x, int y, List<object> attributes)
 {
-	internal class Fragment
-	{
-		public Fragment(int x, int y, List<object> attributes)
-		{
-			X = x;
-			Y = y;
-			Attributes = attributes;
-		}
+	public int X { get; } = x;
+	public int Y { get; } = y;
 
-		public int X { get; }
-		public int Y { get; }
-
-		public IReadOnlyList<object> Attributes { get; }
-	}
+	public IReadOnlyList<object> Attributes { get; } = attributes;
 }
