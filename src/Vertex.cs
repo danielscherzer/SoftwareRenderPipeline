@@ -6,18 +6,9 @@ namespace RenderPipeline;
 
 public class Vertex
 {
-	public Vertex(Vector4 position)
-	{
-		Attributes =
-		[
-			position
-		];
-	}
+	public Vertex(Vector4 attribute) => Attributes = [ attribute ];
 
-	public Vertex(IEnumerable<object> attributes)
-	{
-		Attributes = [.. attributes];
-	}
+	public Vertex(IEnumerable<object> attributes) => Attributes = [.. attributes];
 
 	public TYPE GetAttribute<TYPE>(int index)
 	{

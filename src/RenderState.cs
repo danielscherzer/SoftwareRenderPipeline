@@ -10,7 +10,7 @@ namespace RenderPipeline
 		public delegate IEnumerable<Triangle> TessellationShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Triangle triangle);
 		public delegate Vector4 FragmentShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Fragment fragment);
 
-		public Dictionary<string, object> Uniforms = new();
+		public Dictionary<string, object> Uniforms = [];
 		public VertexShaderDelegate VertexShader { get; set; } = DefaultVertexShader;
 		public TessellationShaderDelegate TessellationShader { get; set; } = DefaultTessellationShader;
 		public GeometryShaderDelegate GeometryShader { get; set; } = DefaultGeometryShader;
@@ -32,7 +32,7 @@ namespace RenderPipeline
 		private static Vertex DefaultVertexShader(IReadOnlyDictionary<string, object> uniforms, Vertex vertex)
 		{
 			var position = vertex.GetAttribute<Vector4>(0);
-			return new Vertex(new object[] { position });
+			return new Vertex([position]);
 		}
 	}
 }

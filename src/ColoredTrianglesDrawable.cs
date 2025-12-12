@@ -4,7 +4,7 @@ using Zenseless.Patterns;
 
 namespace RenderPipeline;
 
-class ColoredTrianglesDrawable(RenderDevice renderer)
+class ColoredTrianglesDrawable(SoftwareRenderDevice renderer)
 {
 	private readonly Handle<Array> attributePosition = renderer.CopyToVideoRAM(new Vector3[]
 		{
@@ -18,7 +18,7 @@ class ColoredTrianglesDrawable(RenderDevice renderer)
 		});
 	private readonly Handle<Array> indices = renderer.CopyToVideoRAM(new uint[] { 0, 1, 2, 3, 4, 5 });
 
-	public void Draw(RenderDevice renderer)
+	public void Draw(SoftwareRenderDevice renderer)
 	{
 		renderer.DrawTrianglesIndexed(indices, [attributePosition, attributeColor]);
 	}

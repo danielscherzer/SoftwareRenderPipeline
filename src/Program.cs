@@ -3,16 +3,13 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
-using System.Reflection;
 using System.Runtime.InteropServices;
 
-var renderer = new RenderDevice(300, 300);
+var renderer = new SoftwareRenderDevice(300, 300);
 
 // load model data
 var triangles = new ColoredTrianglesDrawable(renderer);
-var assemblyName = Assembly.GetExecutingAssembly().Location;
-var assemblyDir = Path.GetDirectoryName(assemblyName) ?? assemblyName;
-var suzanne = new ObjDrawable(File.ReadAllBytes(Path.Combine(assemblyDir, "suzanne.obj")), renderer);
+var suzanne = new ObjDrawable(Resource.Load("suzanne.obj"), renderer);
 
 // set render state
 renderer.RenderState.VertexShader = (uniforms, vertex) =>
@@ -42,7 +39,7 @@ suzanne.Draw(renderer);
 Console.WriteLine($"render time: {time.ElapsedMilliseconds}msec");
 
 var output = "frame.png";
-renderer.FrameBuffer.ToImage(Path.Combine(assemblyDir, output));
+renderer.FrameBuffer.ToImage(Path.Combine(Resource.AssemblyDir, output));
 
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {

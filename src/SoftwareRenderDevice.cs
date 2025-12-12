@@ -7,14 +7,9 @@ using Zenseless.Spatial;
 
 namespace RenderPipeline;
 
-class RenderDevice
+class SoftwareRenderDevice
 {
-	public delegate Vertex VertexShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Vertex vertex);
-	public delegate IEnumerable<Triangle> GeometryShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Triangle triangle);
-	public delegate IEnumerable<Triangle> TessellationShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Triangle triangle);
-	public delegate Vector4 FragmentShaderDelegate(IReadOnlyDictionary<string, object> uniforms, Fragment fragment);
-
-	public RenderDevice(int width, int height)
+	public SoftwareRenderDevice(int width, int height)
 	{
 		FrameBuffer = new Grid<Vector4>(width, height);
 		FrameBuffer.Fill(new Vector4(0, 0, 0, 1));
@@ -57,14 +52,14 @@ class RenderDevice
 		//TODO: here would come geometrical clipping
 
 		//perspective division
-		triangles = triangles.Select(triangle => PerspectiveDivide(triangle));
+		triangles = triangles.Select(PerspectiveDivide);
 
 		// Back face culling would come here.
 
 		// Transform from clip space to screen space. (view-port transform)
-		triangles = triangles.Select(triangle => ViewportTransform(triangle));
+		triangles = triangles.Select(ViewportTransform);
 
-		var fragments = triangles.SelectMany(triangle => RasterizeTriangle(triangle));
+		var fragments = triangles.SelectMany(RasterizeTriangle);
 		foreach (var fragment in fragments)
 		{
 			var color = RenderState.FragmentShader(RenderState.Uniforms, fragment);
@@ -76,7 +71,7 @@ class RenderDevice
 		}
 	}
 
-	private readonly List<Array> bufferObjects = new();
+	private readonly List<Array> bufferObjects = [];
 
 	/// <summary>
 	/// Generates a stream of vertices out of the input geometry

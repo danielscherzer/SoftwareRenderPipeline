@@ -13,7 +13,7 @@ internal class ObjDrawable
 	private readonly Handle<Array> attributeColor;
 	private readonly Handle<Array> attributePosition;
 
-	public ObjDrawable(byte[] bytes, RenderDevice renderer)
+	public ObjDrawable(byte[] bytes, SoftwareRenderDevice renderer)
 	{
 		DefaultMesh mesh = Obj2Mesh.FromObj(bytes);
 		indices = renderer.CopyToVideoRAM(mesh.IDs.ToArray());
@@ -25,7 +25,7 @@ internal class ObjDrawable
 		attributeColor = renderer.CopyToVideoRAM(normalsAsColors.ToArray());
 	}
 
-	internal void Draw(RenderDevice renderer)
+	internal void Draw(SoftwareRenderDevice renderer)
 	{
 		renderer.DrawTrianglesIndexed(indices, [attributePosition, attributeColor]);
 	}
